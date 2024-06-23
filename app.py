@@ -1,6 +1,9 @@
 import numpy as np
 import cv2
+import csv
+import json
 import mediapipe as mp
+from collections import deque
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
 mphands = mp.solutions.hands
@@ -17,7 +20,17 @@ recognizer = vision.GestureRecognizer.create_from_options(options)
 def main():
     cap = cv2.VideoCapture(0)
     hands = mphands.Hands()
+    mode = 0
+
+    history_length = 50
+    point_history = deque(maxlen=history_length)
+
     while True:
+        key = cv2.waitKey(10)
+        if key == 27:  # ESC
+            break
+
+        number, mode = select_mode(key, mode)
         data, image = cap.read()
         image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
         results = hands.process(image)
@@ -30,11 +43,14 @@ def main():
         brect = None
         if results.multi_hand_landmarks:
             brect = calc_bounding_rect(image, results.multi_hand_landmarks[0])
+            point_history.append(list(results.multi_hand_landmarks[0].landmark))
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(
                     image,
                     hand_landmarks, mphands.HAND_CONNECTIONS
                 )
+            logging_csv(number, mode, point_history)
+
 
         #if recognition_result:
         #    top_gesture = recognition_result.gestures[0][0]
@@ -49,14 +65,11 @@ def main():
 
 
         cv2.imshow('Handtracker', image)
-        if cv2.waitKey(10) & 0xFF == ord('q'): 
-            break
 
     # After the loop release the cap object 
     cap.release() 
     # Destroy all the windows 
     cv2.destroyAllWindows() 
-
 
 def calc_bounding_rect(image, landmarks):
     image_width, image_height = image.shape[1], image.shape[0]
@@ -90,6 +103,47 @@ def draw_bounding_rect(use_brect, image, brect):
         cv2.rectangle(image, (brect[0], brect[1]), (brect[2], brect[3]),
                      (0, 0, 0), 1)
     return image
+
+def logging_csv(number, mode, point_history_list):
+    if mode == 0:
+        pass
+    if mode == 1 and (0 <= number <= 9):
+        print("point history written")
+        csv_path = 'data/point_history.csv'
+
+        keypoints = {}
+        # Iterate over each index and data point in point_history
+        for index in range(len(point_history_list)):
+            # Initialize an empty list to hold the points for the current index
+            keypoints[index] = []
+
+            # Iterate over each data point in the current index
+            for data_point in point_history_list[index]:
+                # Append the dictionary with X, Y, Z coordinates to the list
+                keypoints[index].append({
+                    'X': data_point.x,
+                    'Y': data_point.y,
+                    'Z': data_point.z,
+                })
+        json_data = json.dumps(keypoints, indent=2)
+
+        with open(csv_path, 'a', newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([number, json_data])
+    return
+
+def select_mode(key, mode):
+    number = -1
+    if 48 <= key <= 57:  # 0 ~ 9
+        number = key - 48
+    if key == 110:  # n
+        mode = 0
+    if key == 107:  # k
+        mode = 1
+    if key == 104:  # h
+        mode = 2
+    return number, mode
+
 
 if __name__ == '__main__':
     main()
