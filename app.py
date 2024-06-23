@@ -2,6 +2,9 @@ import numpy as np
 import cv2
 import csv
 import json
+import time
+import tensorflow as tf
+import keras
 import mediapipe as mp
 from collections import deque
 mp_drawing = mp.solutions.drawing_utils
@@ -21,9 +24,15 @@ def main():
     cap = cv2.VideoCapture(0)
     hands = mphands.Hands()
     mode = 0
-
+    buffer_time = 0.5  # 500ms
+    last_update_time = time.time()
+    prediction_buffer = []
     history_length = 50
     point_history = deque(maxlen=history_length)
+    wave_recognizer = keras.saving.load_model("./models/waving.keras")
+    mean_prediction = np.array([[0]])
+
+
 
     while True:
         key = cv2.waitKey(10)
@@ -50,8 +59,24 @@ def main():
                     hand_landmarks, mphands.HAND_CONNECTIONS
                 )
             logging_csv(number, mode, point_history)
+            flattened_input = flatten_point_history(point_history)
+            if len(flattened_input) == 50:
+                prediction = wave_recognizer.predict(np.array(flattened_input).reshape(1,50,42))
+                prediction_buffer.append(prediction)
+                print(prediction_buffer)
+                # Check if 500ms have passed
+        current_time = time.time()
+        if current_time - last_update_time >= buffer_time:
+            if prediction_buffer:
+                mean_prediction = np.mean(prediction_buffer, axis=0)
+                print(mean_prediction)
+                # Reset the buffer and timer
+                prediction_buffer = []
+            last_update_time = current_time
+        if results.multi_hand_landmarks and mean_prediction[0][0]>0.5:
+            image = draw_info(image, text = "waving")
 
-
+        else: image = draw_info(image, text = "")
         #if recognition_result:
         #    top_gesture = recognition_result.gestures[0][0]
         #    hand_landmarks = recognition_result.hand_landmarks
@@ -104,6 +129,12 @@ def draw_bounding_rect(use_brect, image, brect):
                      (0, 0, 0), 1)
     return image
 
+def draw_info(image, text):
+    cv2.putText(image, "Motion:" + str(text), (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+               1.0, (0, 0, 0), 4, cv2.LINE_AA)
+    return image
+
+
 def logging_csv(number, mode, point_history_list):
     if mode == 0:
         pass
@@ -143,6 +174,18 @@ def select_mode(key, mode):
     if key == 104:  # h
         mode = 2
     return number, mode
+
+def flatten_point_history(point_history):
+    # Parse the JSON string    
+    # Flatten the list of landmarks into a single list
+    point_history_list = []
+    for values in point_history:
+        flattened_points = []
+        for point in values:
+            flattened_points.extend([point.x, point.y])
+        point_history_list.append(flattened_points)
+    return point_history_list
+
 
 
 if __name__ == '__main__':
