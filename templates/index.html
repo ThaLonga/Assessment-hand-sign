@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Sign Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #f0f2f5;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hand Sign Prediction</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="image-upload" accept="image/*">
+        <button type="button" onclick="uploadImage()">Predict</button>
+    </form>
+    <p id="result"></p>
+
+    <script>
+        function uploadImage() {
+            const fileInput = document.getElementById('image-upload');
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onloadend = function() {
+                const base64String = reader.result.replace('data:', '').replace(/^.+,/, '');
+                const jsonPayload = JSON.stringify({ image: base64String });
+                
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: jsonPayload
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('result').innerText = 'Error: ' + data.error;
+                    } else {
+                        document.getElementById('result').innerText = 'Prediction: ' + data.prediction;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('result').innerText = 'Error: ' + error;
+                });
+            };
+            
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('result').innerText = 'Please select an image.';
+            }
+        }
+    </script>
+</body>
+</html>
