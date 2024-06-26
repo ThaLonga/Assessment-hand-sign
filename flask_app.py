@@ -21,34 +21,12 @@ recognizer = vision.GestureRecognizer.create_from_options(options)
 
 app = Flask(__name__)
 
-def remove_transparency(im, bg_colour=(255, 255, 255)):
-
-    # Only process if image has transparency (http://stackoverflow.com/a/1963146)
-    if im.mode in ('RGBA', 'LA') or (im.mode == 'P' and 'transparency' in im.info):
-
-        # Need to convert to RGBA if LA format due to a bug in PIL (http://stackoverflow.com/a/1963146)
-        alpha = im.convert('RGBA').split()[-1]
-
-        # Create a new background image of our matt color.
-        # Must be RGBA because paste requires both images have the same format
-        # (http://stackoverflow.com/a/8720632  and  http://stackoverflow.com/a/9459208)
-        bg = Image.new("RGBA", im.size, bg_colour + (255,))
-        bg.paste(im, mask=alpha)
-        return bg
-
-    else:
-        return im
-
-# Dummy function for prediction, replace with actual model prediction logic
 def predict_hand_sign(image_array):
-    # Replace this with the actual prediction logic using your trained model
-    print(image_array.shape)
     processed_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_array)
     solution = recognizer.recognize(processed_image)
-    if solution.gestures[0][0]:
-        print(solution.gestures[0][0].category_name)
+    if solution.gestures:
         return solution.gestures[0][0].category_name
-    else: return("No gesture recognized.")
+    else: return("No hand recognized.")
 
 @app.route('/')
 def index():
@@ -62,14 +40,9 @@ def predict():
         return jsonify({'error': 'No image provided'}), 400
 
     try:
-        # Assuming the image is base64 encoded
         image_data = base64.b64decode(data['image'])
         image = Image.open(io.BytesIO(image_data))
-        
-        # Preprocess the image as needed for your model
-        #image = image.resize((64, 64))  # Example resize
         image_array = np.array(image)  # Convert to numpy array
-        #image_array = image_array / 255.0  # Example normalization
         
         # Get the prediction
         prediction = predict_hand_sign(image_array)

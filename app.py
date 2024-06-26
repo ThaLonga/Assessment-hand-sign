@@ -24,7 +24,7 @@ def main():
     cap = cv2.VideoCapture(0)
     hands = mphands.Hands()
     mode = 0
-    buffer_time = 0.5  # 500ms
+    buffer_time = 0.25  # 500ms
     last_update_time = time.time()
     prediction_buffer = []
     history_length = 50
@@ -77,17 +77,11 @@ def main():
             image = draw_info(image, text = "waving")
 
         else: image = draw_info(image, text = "")
-        #if recognition_result:
-        #    top_gesture = recognition_result.gestures[0][0]
-        #    hand_landmarks = recognition_result.hand_landmarks
 
         if brect:
             image = draw_bounding_rect(True, image, brect=brect)
             if recognition_result:
                 image = draw_info_text(image=image, brect=brect, recognition_result=recognition_result)
-
-
-
 
         cv2.imshow('Handtracker', image)
 
