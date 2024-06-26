@@ -2,7 +2,7 @@
 This hand-sign-prediction repository contains an app "app.py" which runs using the camera and detects gestures using Mediapipe. Further, it also recognizes waving motion by employment of a LSTM-based neural network. The Flask web app "app_flask.py" accepts jpeg image uploads and returns the recognized gesture.
 
 ## Requirements
-The code was built using python 3.11, tensorflow 2.16, keras 3.3.3, mediapipe 0.10 and openCV 4.10. Further details can be found in requirements.txt.
+The code was built using python 3.11, flask 3.0, tensorflow 2.16, keras 3.3.3, mediapipe 0.10 and openCV 4.10. Further details can be found in requirements.txt.
 
 ## Technology Stack
 Backend: Flask, Python, MediaPipe
