@@ -10,26 +10,15 @@ Frontend: HTML, CSS, JavaScript
 Model: TensorFlow, MediaPipe
 
 ## Project structure:
-│
-
-├── app.py                  # Main application file
-
-├── app_flask.py            # Web application file
-
-├── waving_training.ipynb   # Notebook for training waving detector
-
+│\
+├── app.py                  # Main application file\
+├── app_flask.py            # Web application file\
+├── waving_training.ipynb   # Notebook for training waving detector\
 ├── benchmark.ipynb         # Mediapipe GestureRecognizer performance benchmark
-
 ├── templates/
-
 │   └── index.html          # HTML file for the web interface
-
 ├── models/
-
 │   └── gesture_recognizer.task  # Trained model file for gesture recognition
-
 │   └── waving.keras        # Trained model file for waving detection
-
 ├── requirements.txt        # List of Python packages required for the project
-
 └── README.md 
